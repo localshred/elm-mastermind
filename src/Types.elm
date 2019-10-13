@@ -89,7 +89,7 @@ init flags =
 
 initRounds : RoundNumber -> SlotNumber -> Dict RoundNumber Slots
 initRounds totalRounds totalSlots =
-    List.range 0 (totalRounds - 1)
+    List.range 1 totalRounds
         |> List.map (\index -> ( index, initRound totalSlots index ))
         |> Dict.fromList
 

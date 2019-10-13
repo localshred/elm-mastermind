@@ -165,7 +165,7 @@ suite =
 
                         rounds =
                             initRounds 2 4
-                                |> Dict.insert 0
+                                |> Dict.insert 1
                                     (buildSlots
                                         [ ( PegGreen, PipNoMatch )
                                         , ( PegGreen, PipNoMatch )
@@ -193,11 +193,11 @@ suite =
                         result
                             |> Expect.all
                                 [ \m -> m.gameState |> Expect.equal GamePlaying
-                                , \m -> m.currentRound |> Expect.equal 1
+                                , \m -> m.currentRound |> Expect.equal 2
                                 , \m ->
                                     m
                                         |> .rounds
-                                        |> Dict.get 0
+                                        |> Dict.get 1
                                         |> Maybe.withDefault Dict.empty
                                         |> Expect.equal expectedRound
                                 ]
@@ -215,7 +215,7 @@ suite =
 
                         rounds =
                             initRounds 2 4
-                                |> Dict.insert 0
+                                |> Dict.insert 1
                                     (buildSlots
                                         [ ( PegGreen, PipNoMatch )
                                         , ( PegBlue, PipNoMatch )
@@ -243,11 +243,11 @@ suite =
                         result
                             |> Expect.all
                                 [ \m -> m.gameState |> Expect.equal GameWon
-                                , \m -> m.currentRound |> Expect.equal 0
+                                , \m -> m.currentRound |> Expect.equal 1
                                 , \m ->
                                     m
                                         |> .rounds
-                                        |> Dict.get 0
+                                        |> Dict.get 1
                                         |> Maybe.withDefault Dict.empty
                                         |> Expect.equal expectedRound
                                 ]
@@ -265,7 +265,7 @@ suite =
 
                         rounds =
                             initRounds 1 4
-                                |> Dict.insert 0
+                                |> Dict.insert 1
                                     (buildSlots
                                         [ ( PegGreen, PipNoMatch )
                                         , ( PegGreen, PipNoMatch )
@@ -290,11 +290,11 @@ suite =
                         result
                             |> Expect.all
                                 [ \m -> m.gameState |> Expect.equal GameLost
-                                , \m -> m.currentRound |> Expect.equal 0
+                                , \m -> m.currentRound |> Expect.equal 1
                                 , \m ->
                                     m
                                         |> .rounds
-                                        |> Dict.get 0
+                                        |> Dict.get 1
                                         |> Maybe.withDefault Dict.empty
                                         |> Expect.equal expectedRound
                                 ]
@@ -346,7 +346,7 @@ suite =
 
 buildPlayingModelForTest : Int -> Slots -> List Slots -> Model
 buildPlayingModelForTest totalSlots solution rounds =
-    { currentRound = 0
+    { currentRound = 1
     , gameState = GamePlaying
     , solution = solution
     , rounds = buildRounds rounds
@@ -358,5 +358,5 @@ buildPlayingModelForTest totalSlots solution rounds =
 buildRounds : List Slots -> Rounds
 buildRounds rounds =
     rounds
-        |> List.indexedMap Tuple.pair
+        |> List.indexedMap (\index round -> ( index + 1, round ))
         |> Dict.fromList

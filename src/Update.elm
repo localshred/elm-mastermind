@@ -56,7 +56,7 @@ computeNextGameState model =
             solutionPegs == roundPegs
 
         isGameLost =
-            (not isGameWon) && model.currentRound == model.totalRounds - 1
+            (not isGameWon) && model.currentRound == model.totalRounds
 
         updatedModel =
             if isGameWon then
