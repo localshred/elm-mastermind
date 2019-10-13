@@ -26,6 +26,7 @@ type Msg
     | ConfigSetTotalRounds String
     | ConfigSetTotalSlots String
     | GenerateSolution (List Int)
+    | ResetGame
     | StartGame
     | SetPeg RoundNumber SlotNumber Peg
 

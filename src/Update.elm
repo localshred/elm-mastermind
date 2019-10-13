@@ -18,18 +18,20 @@ update msg model =
         ConfigSetTotalRounds totalRounds ->
             model
                 |> setTotalRounds totalRounds
-                |> applyGeneratedSolution
 
         ConfigSetTotalSlots totalSlots ->
             model
                 |> setTotalSlots totalSlots
-                |> applyGeneratedSolution
 
         GenerateSolution randomPegInts ->
             generateSolution model randomPegInts
 
+        ResetGame ->
+            resetGame model
+
         StartGame ->
             startGame model
+                |> applyGeneratedSolution
 
         SetPeg roundNumber slotNumber peg ->
             setPeg model roundNumber slotNumber peg
@@ -69,22 +71,22 @@ computeNextGameState model =
         ( updatedModel, Cmd.none )
 
 
-setTotalRounds : String -> Model -> Model
+setTotalRounds : String -> Model -> ( Model, Cmd Msg )
 setTotalRounds totalRounds model =
     let
         totalRoundsInt =
             totalRounds |> String.toInt |> withDefault 10
     in
-        { model | totalRounds = totalRoundsInt }
+        ( { model | totalRounds = totalRoundsInt }, Cmd.none )
 
 
-setTotalSlots : String -> Model -> Model
+setTotalSlots : String -> Model -> ( Model, Cmd Msg )
 setTotalSlots totalSlots model =
     let
         totalSlotsInt =
             totalSlots |> String.toInt |> withDefault 4
     in
-        { model | totalSlots = totalSlotsInt }
+        ( { model | totalSlots = totalSlotsInt }, Cmd.none )
 
 
 applyGeneratedSolution : Model -> ( Model, Cmd Msg )
@@ -140,14 +142,21 @@ intToPeg randomPegNumber =
             PegNone
 
 
-startGame : Model -> ( Model, Cmd Msg )
-startGame model =
+resetGame : Model -> ( Model, Cmd Msg )
+resetGame model =
     ( { model
-        | gameState = GamePlaying
-        , rounds = initRounds model.totalRounds model.totalSlots
+        | gameState = GameNew
       }
     , Cmd.none
     )
+
+
+startGame : Model -> Model
+startGame model =
+    { model
+        | gameState = GamePlaying
+        , rounds = initRounds model.totalRounds model.totalSlots
+    }
 
 
 setSlotPip : Model -> Solution -> SlotNumber -> ( Solution, Slot )

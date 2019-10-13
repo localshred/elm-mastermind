@@ -20,10 +20,10 @@ view model =
                     playingGameView model
 
                 GameWon ->
-                    gameWonView model
+                    playingGameView model
 
                 GameLost ->
-                    gameLostView model
+                    playingGameView model
     in
         div
             [ style "width" "50%"
@@ -82,7 +82,7 @@ playingGameView : Model -> Html Msg
 playingGameView model =
     div
         []
-        [ h2 [] [ text <| guessesCountDescription model ]
+        [ displayGameStateTitle model
         , roundsView model
         , h2 [] [ text "Solution" ]
         , solutionView model
@@ -141,13 +141,19 @@ slotsView roundNumber slots =
 roundInfoView : RoundNumber -> Model -> Html Msg
 roundInfoView roundNumber model =
     let
-        children =
-            if roundNumber == model.currentRound then
-                [ button
+        buttonChild =
+            if model.gameState == GamePlaying then
+                button
                     [ onClick CommitRound
                     , disabled <| (areRoundSlotsFull roundNumber model |> not)
                     ]
                     [ text "Check My Guess" ]
+            else
+                span [] []
+
+        children =
+            if roundNumber == model.currentRound then
+                [ buttonChild
                 ]
             else if roundNumber < model.currentRound then
                 pipsForRoundView roundNumber model
@@ -214,7 +220,7 @@ solutionView model =
         , style "margin" "5px"
         , style "text-align" "center"
         ]
-        (roundView model -1 (Debug.log "solution" model.solution) [])
+        (roundView model 0 (Debug.log "solution" model.solution) [])
 
 
 roundsView : Model -> Html Msg
@@ -237,6 +243,25 @@ roundsView model =
         )
 
 
+displayGameStateTitle : Model -> Html Msg
+displayGameStateTitle model =
+    case model.gameState of
+        GameNew ->
+            h2 [] [ text "Game hasn't started yet" ]
+
+        GamePlaying ->
+            h2 [] [ text <| guessesCountDescription model ]
+
+        GameWon ->
+            h2 [] [ text "Yahoo! You won the game!" ]
+
+        GameLost ->
+            h2 []
+                [ text "Sorry, you lost the game!"
+                , button [ onClick ResetGame ] [ text "Restart" ]
+                ]
+
+
 guessesCountDescription : Model -> String
 guessesCountDescription model =
     let
@@ -246,7 +271,7 @@ guessesCountDescription model =
         totalRounds =
             model.rounds |> Dict.size |> String.fromInt
     in
-        "Guesses (" ++ currentRound ++ " of " ++ totalRounds ++ ")"
+        "Round " ++ currentRound ++ " of " ++ totalRounds
 
 
 pegBorderStyle : Peg -> String
