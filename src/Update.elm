@@ -158,7 +158,10 @@ intToPeg randomPegNumber =
 resetGame : Model -> ( Model, Cmd Msg )
 resetGame model =
     ( { model
-        | gameState = GameNew
+        | currentRound = 1
+        , gameState = GameNew
+        , rounds = Dict.empty
+        , solution = Dict.empty
       }
     , Cmd.none
     )

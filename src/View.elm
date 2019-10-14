@@ -328,12 +328,15 @@ displayGameStateTitle model =
             h2 [] [ text <| guessesCountDescription model ]
 
         GameWon ->
-            h2 [] [ text "Yahoo! You won the game!" ]
+            h2 []
+                [ text "Yahoo! You won the game!"
+                , button [ onClick ResetGame ] [ text "New Game" ]
+                ]
 
         GameLost ->
             h2 []
                 [ text "Sorry, you lost the game!"
-                , button [ onClick ResetGame ] [ text "Restart" ]
+                , button [ onClick ResetGame ] [ text "New Game" ]
                 ]
 
 
