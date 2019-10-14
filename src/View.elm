@@ -242,7 +242,7 @@ pipsForRoundView roundNumber model =
                 |> Dict.values
                 |> List.map pipView
     in
-        [ div [] pips ]
+        [ div [ style "width" "48px" ] pips ]
 
 
 pipView : Pip -> Html Msg
@@ -251,7 +251,7 @@ pipView pip =
         backgroundColor =
             case pip of
                 PipNoMatch ->
-                    "#000"
+                    "#666"
 
                 PipColorMatch ->
                     "#fff"
