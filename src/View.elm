@@ -1,6 +1,5 @@
 module View exposing (..)
 
-import Debug
 import Dict exposing (toList)
 import Html exposing (Html, button, div, h2, input, label, text, span)
 import Html.Events exposing (onClick, onInput)
@@ -16,7 +15,7 @@ view model =
                 GameNew ->
                     newGameView model
 
-                GamePlaying ->
+                GamePlaying _ ->
                     playingGameView model
 
                 GameWon ->
@@ -28,6 +27,7 @@ view model =
         div
             [ style "width" "50%"
             , style "margin" "0 auto"
+            , style "background" "#f1eed3"
             ]
             ([ h2 [] [ text "Mastermind" ] ]
                 ++ [ innerGameView ]
@@ -89,22 +89,45 @@ playingGameView model =
         ]
 
 
-slotView : RoundNumber -> ( SlotNumber, Slot ) -> Html Msg
-slotView roundNumber ( slotNumber, ( peg, pip ) ) =
+pegView : String -> String -> List (Html.Attribute Msg) -> Html Msg
+pegView borderStyle backgroundColor additionalAttrs =
     div
-        [ style "border" "2px solid #333"
-        , style "border-style" <| pegBorderStyle peg
-        , style "border-radius" "50%"
-        , style "background" <| pegColor peg
-        , style "display" "inline-block"
-        , style "width" "25px"
-        , style "height" "25px"
-        , style "overflow" "hidden"
-        , style "margin" "5px 10px"
-        , style "cursor" "pointer"
-        , onClick (SetPeg roundNumber slotNumber PegGreen)
-        ]
+        ([ style "border" "2px solid #333"
+         , style "border-radius" "50%"
+         , style "border-style" borderStyle
+         , style "background" backgroundColor
+         , style "display" "inline-block"
+         , style "width" "25px"
+         , style "height" "25px"
+         , style "overflow" "hidden"
+         , style "margin" "5px 10px"
+         ]
+            ++ additionalAttrs
+        )
         []
+
+
+slotView : RoundNumber -> Model -> ( SlotNumber, Slot ) -> Html Msg
+slotView roundNumber model ( slotNumber, ( peg, pip ) ) =
+    let
+        borderStyle =
+            pegBorderStyle peg
+
+        backgroundColor =
+            pegColor peg
+
+        currentRoundSlotAttrs =
+            [ style "cursor" "pointer"
+            , onClick (SelectSlot roundNumber slotNumber)
+            ]
+
+        isCurrentRound =
+            model.currentRound == roundNumber
+    in
+        if isCurrentRound then
+            pegView borderStyle backgroundColor currentRoundSlotAttrs
+        else
+            pegView borderStyle backgroundColor []
 
 
 roundView : Model -> RoundNumber -> Slots -> List (Html Msg) -> List (Html Msg)
@@ -119,7 +142,7 @@ roundView model roundNumber slots accumulator =
                 , style "width" "100%"
                 ]
                 ([ roundNameView roundNumber
-                 , slotsView roundNumber slots
+                 , slotsView roundNumber slots model
                  , roundInfoView roundNumber model
                  ]
                 )
@@ -127,29 +150,67 @@ roundView model roundNumber slots accumulator =
         accumulator ++ [ roundDiv ]
 
 
-slotsView : RoundNumber -> Slots -> Html Msg
-slotsView roundNumber slots =
+slotsView : RoundNumber -> Slots -> Model -> Html Msg
+slotsView roundNumber slots model =
     div
         [ style "width" "60%"
+        , style "position" "relative"
         ]
         (slots
             |> Dict.toList
-            |> List.map (slotView roundNumber)
+            |> List.map (slotView roundNumber model)
+            |> List.append [ pegPickerView roundNumber model ]
         )
+
+
+pegPickerView : RoundNumber -> Model -> Html Msg
+pegPickerView roundNumber model =
+    case model.gameState of
+        GamePlaying (PegPickerOpen selectedRoundNumber selectedSlotNumber) ->
+            if model.currentRound == roundNumber then
+                div
+                    [ style "background" "#aaa"
+                    , style "position" "absolute"
+                    , style "top" "50px"
+                    , style "left" "125px"
+                    , style "width" "150px"
+                    , style "z-index" "1"
+                    ]
+                    ([ span [] [ text "Pick Color" ] ] ++ (pegPickerSlotsView selectedRoundNumber selectedSlotNumber))
+            else
+                span [] []
+
+        _ ->
+            span [] []
+
+
+pegPickerSlotsView : RoundNumber -> SlotNumber -> List (Html Msg)
+pegPickerSlotsView roundNumber slotNumber =
+    let
+        pegSlotView peg =
+            pegView (pegBorderStyle peg) (pegColor peg) [ onClick <| SetPeg roundNumber slotNumber peg ]
+
+        slots =
+            allPegs
+                |> List.map pegSlotView
+    in
+        [ div [] slots ]
 
 
 roundInfoView : RoundNumber -> Model -> Html Msg
 roundInfoView roundNumber model =
     let
         buttonChild =
-            if model.gameState == GamePlaying then
-                button
-                    [ onClick CommitRound
-                    , disabled <| (areRoundSlotsFull roundNumber model |> not)
-                    ]
-                    [ text "Check My Guess" ]
-            else
-                span [] []
+            case model.gameState of
+                GamePlaying _ ->
+                    button
+                        [ onClick CommitRound
+                        , disabled <| (areRoundSlotsFull roundNumber model |> not)
+                        ]
+                        [ text "Check My Guess" ]
+
+                _ ->
+                    span [] []
 
         children =
             if roundNumber == model.currentRound then
@@ -186,15 +247,30 @@ pipsForRoundView roundNumber model =
 
 pipView : Pip -> Html Msg
 pipView pip =
-    case pip of
-        PipNoMatch ->
-            div [] [ text "0" ]
+    let
+        backgroundColor =
+            case pip of
+                PipNoMatch ->
+                    "#000"
 
-        PipColorMatch ->
-            div [] [ text "1" ]
+                PipColorMatch ->
+                    "#fff"
 
-        PipColorSlotMatch ->
-            div [] [ text "2" ]
+                PipColorSlotMatch ->
+                    "#f00"
+    in
+        span
+            [ style "border" "1px solid #333"
+            , style "border-radius" "50%"
+            , style "border-style" "solid"
+            , style "background" backgroundColor
+            , style "display" "inline-block"
+            , style "width" "10px"
+            , style "height" "10px"
+            , style "overflow" "hidden"
+            , style "margin" "3px"
+            ]
+            []
 
 
 roundNameView : RoundNumber -> Html Msg
@@ -220,14 +296,13 @@ solutionView model =
         , style "margin" "5px"
         , style "text-align" "center"
         ]
-        (roundView model 0 (Debug.log "solution" model.solution) [])
+        (roundView model 0 model.solution [])
 
 
 roundsView : Model -> Html Msg
 roundsView model =
     div
-        [ style "background-color" "#eee"
-        , style "width" "100%"
+        [ style "width" "100%"
         , style "padding" "5px"
         , style "margin" "5px"
         , style "text-align" "center"
@@ -249,7 +324,7 @@ displayGameStateTitle model =
         GameNew ->
             h2 [] [ text "Game hasn't started yet" ]
 
-        GamePlaying ->
+        GamePlaying _ ->
             h2 [] [ text <| guessesCountDescription model ]
 
         GameWon ->
@@ -276,10 +351,12 @@ guessesCountDescription model =
 
 pegBorderStyle : Peg -> String
 pegBorderStyle peg =
-    if peg == PegNone then
-        "dotted"
-    else
-        "solid"
+    case peg of
+        PegNone ->
+            "dotted"
+
+        _ ->
+            "solid"
 
 
 pegColor : Peg -> String

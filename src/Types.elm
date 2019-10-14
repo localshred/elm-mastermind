@@ -6,7 +6,7 @@ import Tuple exposing (pair)
 
 type GameState
     = GameNew
-    | GamePlaying
+    | GamePlaying PegPickerState
     | GameWon
     | GameLost
 
@@ -28,6 +28,7 @@ type Msg
     | GenerateSolution (List Int)
     | ResetGame
     | StartGame
+    | SelectSlot RoundNumber SlotNumber
     | SetPeg RoundNumber SlotNumber Peg
 
 
@@ -41,8 +42,23 @@ type Peg
     | PegYellow
 
 
+type PegPickerState
+    = PegPickerClosed
+    | PegPickerOpen RoundNumber SlotNumber
+
+
+allPegs =
+    [ PegBlack
+    , PegBlue
+    , PegGreen
+    , PegRed
+    , PegWhite
+    , PegYellow
+    ]
+
+
 totalPegColors =
-    6
+    allPegs |> List.length
 
 
 type Pip
@@ -79,8 +95,8 @@ init : () -> ( Model, Cmd Msg )
 init flags =
     ( { currentRound = 1
       , gameState = GameNew
-      , solution = Dict.empty
       , rounds = Dict.empty
+      , solution = Dict.empty
       , totalRounds = 10
       , totalSlots = 4
       }
