@@ -2,7 +2,7 @@ module UpdateTests exposing (..)
 
 import Dict
 import Types exposing (..)
-import Update exposing (computePips, setSlotPip, update)
+import Update exposing (setRoundPips, computePips, update)
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
 import Test exposing (..)
@@ -11,168 +11,17 @@ import Test exposing (..)
 suite : Test
 suite =
     describe "Update"
-        [ describe "setSlotPip"
-            [ test "color slot match" <|
-                \_ ->
-                    let
-                        solution =
-                            buildSlots
-                                [ ( PegGreen, PipNoMatch )
-                                , ( PegBlue, PipNoMatch )
-                                , ( PegWhite, PipNoMatch )
-                                , ( PegBlack, PipNoMatch )
-                                ]
-
-                        expectedAvailableSolution =
-                            solution
-                                |> Dict.remove 0
-
-                        round =
-                            buildSlots
-                                [ ( PegGreen, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                ]
-
-                        model =
-                            buildPlayingModelForTest 4 solution [ round ]
-
-                        expected =
-                            ( expectedAvailableSolution, ( PegGreen, PipColorSlotMatch ) )
-
-                        actual =
-                            setSlotPip model model.solution 0
-                    in
-                        actual
-                            |> Expect.equal expected
-              -- new test
-            , test "single color matches solution in other slot" <|
-                \_ ->
-                    let
-                        solution =
-                            buildSlots
-                                [ ( PegGreen, PipNoMatch )
-                                , ( PegBlue, PipNoMatch )
-                                , ( PegWhite, PipNoMatch )
-                                , ( PegBlack, PipNoMatch )
-                                ]
-
-                        expectedAvailableSolution =
-                            solution
-                                |> Dict.remove 1
-
-                        round =
-                            buildSlots
-                                [ ( PegBlue, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                ]
-
-                        model =
-                            buildPlayingModelForTest 4 solution [ round ]
-
-                        expected =
-                            ( expectedAvailableSolution, ( PegBlue, PipColorMatch ) )
-
-                        actual =
-                            setSlotPip model model.solution 0
-                    in
-                        actual
-                            |> Expect.equal expected
-              -- new test
-            , test "multiple color matches solution in other slot only once" <|
-                \_ ->
-                    let
-                        solution =
-                            buildSlots
-                                [ ( PegGreen, PipNoMatch )
-                                , ( PegBlue, PipNoMatch )
-                                , ( PegBlue, PipNoMatch )
-                                , ( PegBlue, PipNoMatch )
-                                ]
-
-                        expectedAvailableSolution =
-                            solution
-                                |> Dict.remove 1
-
-                        round =
-                            buildSlots
-                                [ ( PegBlue, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                ]
-
-                        model =
-                            buildPlayingModelForTest 4 solution [ round ]
-
-                        expected =
-                            ( expectedAvailableSolution, ( PegBlue, PipColorMatch ) )
-
-                        actual =
-                            setSlotPip model model.solution 0
-                    in
-                        actual
-                            |> Expect.equal expected
-              -- new test
-            , test "no matches" <|
-                \_ ->
-                    let
-                        solution =
-                            buildSlots
-                                [ ( PegGreen, PipNoMatch )
-                                , ( PegBlue, PipNoMatch )
-                                , ( PegWhite, PipNoMatch )
-                                , ( PegBlack, PipNoMatch )
-                                ]
-
-                        expectedAvailableSolution =
-                            solution
-
-                        round =
-                            buildSlots
-                                [ ( PegRed, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                , ( PegNone, PipNoMatch )
-                                ]
-
-                        model =
-                            buildPlayingModelForTest 4 solution [ round ]
-
-                        expected =
-                            ( expectedAvailableSolution, ( PegRed, PipNoMatch ) )
-
-                        actual =
-                            setSlotPip model model.solution 0
-                    in
-                        actual
-                            |> Expect.equal expected
-            ]
-        , describe "update"
+        [ describe "update"
             [ test "CommitRound advance to next round" <|
                 \_ ->
                     let
                         solution =
-                            buildSlots
-                                [ ( PegGreen, PipNoMatch )
-                                , ( PegBlue, PipNoMatch )
-                                , ( PegWhite, PipNoMatch )
-                                , ( PegBlack, PipNoMatch )
-                                ]
+                            buildSlots [ red, yellow, red, blue ]
 
                         rounds =
                             initRounds 2 4
                                 |> Dict.insert 1
-                                    (buildSlots
-                                        [ ( PegGreen, PipNoMatch )
-                                        , ( PegGreen, PipNoMatch )
-                                        , ( PegWhite, PipNoMatch )
-                                        , ( PegBlack, PipNoMatch )
-                                        ]
-                                    )
+                                    (buildSlots [ black, blue, black, blue ])
 
                         model =
                             buildPlayingModelForTest 4 solution []
@@ -183,16 +32,11 @@ suite =
                                 |> update CommitRound
 
                         expectedRound =
-                            buildSlots
-                                [ ( PegGreen, PipColorSlotMatch )
-                                , ( PegGreen, PipNoMatch )
-                                , ( PegWhite, PipColorSlotMatch )
-                                , ( PegBlack, PipColorSlotMatch )
-                                ]
+                            buildSlots [ black, blue, black, ( PegBlue, PipColorSlotMatch ) ]
                     in
                         result
                             |> Expect.all
-                                [ \m -> m.gameState |> Expect.equal GamePlaying
+                                [ \m -> m.gameState |> Expect.equal (GamePlaying PegPickerClosed)
                                 , \m -> m.currentRound |> Expect.equal 2
                                 , \m ->
                                     m
@@ -206,23 +50,11 @@ suite =
                 \_ ->
                     let
                         solution =
-                            buildSlots
-                                [ ( PegGreen, PipNoMatch )
-                                , ( PegBlue, PipNoMatch )
-                                , ( PegWhite, PipNoMatch )
-                                , ( PegBlack, PipNoMatch )
-                                ]
+                            buildSlots [ green, blue, white, black ]
 
                         rounds =
                             initRounds 2 4
-                                |> Dict.insert 1
-                                    (buildSlots
-                                        [ ( PegGreen, PipNoMatch )
-                                        , ( PegBlue, PipNoMatch )
-                                        , ( PegWhite, PipNoMatch )
-                                        , ( PegBlack, PipNoMatch )
-                                        ]
-                                    )
+                                |> Dict.insert 1 (buildSlots [ green, blue, white, black ])
 
                         model =
                             buildPlayingModelForTest 4 solution []
@@ -256,23 +88,11 @@ suite =
                 \_ ->
                     let
                         solution =
-                            buildSlots
-                                [ ( PegGreen, PipNoMatch )
-                                , ( PegBlue, PipNoMatch )
-                                , ( PegWhite, PipNoMatch )
-                                , ( PegBlack, PipNoMatch )
-                                ]
+                            buildSlots [ green, blue, white, black ]
 
                         rounds =
                             initRounds 1 4
-                                |> Dict.insert 1
-                                    (buildSlots
-                                        [ ( PegGreen, PipNoMatch )
-                                        , ( PegGreen, PipNoMatch )
-                                        , ( PegWhite, PipNoMatch )
-                                        , ( PegBlack, PipNoMatch )
-                                        ]
-                                    )
+                                |> Dict.insert 1 (buildSlots [ green, green, white, black ])
 
                         ( result, _ ) =
                             buildPlayingModelForTest 4 solution []
@@ -282,7 +102,7 @@ suite =
                         expectedRound =
                             buildSlots
                                 [ ( PegGreen, PipColorSlotMatch )
-                                , ( PegGreen, PipNoMatch )
+                                , green
                                 , ( PegWhite, PipColorSlotMatch )
                                 , ( PegBlack, PipColorSlotMatch )
                                 ]
@@ -304,20 +124,10 @@ suite =
                 \_ ->
                     let
                         solution =
-                            buildSlots
-                                [ ( PegGreen, PipNoMatch )
-                                , ( PegBlue, PipNoMatch )
-                                , ( PegWhite, PipNoMatch )
-                                , ( PegBlack, PipNoMatch )
-                                ]
+                            buildSlots [ green, blue, white, black ]
 
                         round =
-                            buildSlots
-                                [ ( PegGreen, PipNoMatch )
-                                , ( PegBlue, PipNoMatch )
-                                , ( PegWhite, PipNoMatch )
-                                , ( PegBlack, PipNoMatch )
-                                ]
+                            buildSlots [ green, blue, white, black ]
 
                         result =
                             [ round ]
@@ -341,13 +151,143 @@ suite =
                         actualRound
                             |> Expect.equal expectedRound
             ]
+        , describe "setRoundPips"
+            ([ { desc = "one slot match"
+               , solution = buildSlots [ green ]
+               , round = buildSlots [ green ]
+               , expectedRound = buildSlots [ ( PegGreen, PipColorSlotMatch ) ]
+               }
+             , { desc = "one slot no match"
+               , solution = buildSlots [ blue ]
+               , round = buildSlots [ green ]
+               , expectedRound = buildSlots [ green ]
+               }
+             , { desc = "two color slot matches"
+               , solution = buildSlots [ blue, blue ]
+               , round = buildSlots [ blue, blue ]
+               , expectedRound = buildSlots [ ( PegBlue, PipColorSlotMatch ), ( PegBlue, PipColorSlotMatch ) ]
+               }
+             , { desc = "two color matches"
+               , solution = buildSlots [ blue, green ]
+               , round = buildSlots [ green, blue ]
+               , expectedRound = buildSlots [ ( PegGreen, PipColorMatch ), ( PegBlue, PipColorMatch ) ]
+               }
+             , { desc = "two slots no match"
+               , solution = buildSlots [ blue, blue ]
+               , round = buildSlots [ green, green ]
+               , expectedRound = buildSlots [ green, green ]
+               }
+             , { desc = "two round pegs matching slot in solution"
+               , solution = buildSlots [ red, yellow, red, blue ]
+               , round = buildSlots [ black, blue, black, blue ]
+               , expectedRound = buildSlots [ black, blue, black, ( PegBlue, PipColorSlotMatch ) ]
+               }
+             , { desc = "one color match"
+               , solution = buildSlots [ red, yellow, blue, white ]
+               , round = buildSlots [ black, blue, black, green ]
+               , expectedRound = buildSlots [ black, ( PegBlue, PipColorMatch ), black, green ]
+               }
+             , { desc = "four color slot matches"
+               , solution = buildSlots [ red, blue, green, white ]
+               , round = buildSlots [ red, blue, green, white ]
+               , expectedRound =
+                    buildSlots
+                        [ ( PegRed, PipColorSlotMatch )
+                        , ( PegBlue, PipColorSlotMatch )
+                        , ( PegGreen, PipColorSlotMatch )
+                        , ( PegWhite, PipColorSlotMatch )
+                        ]
+               }
+             , { desc = "four color matches"
+               , solution = buildSlots [ white, green, blue, red ]
+               , round = buildSlots [ red, blue, green, white ]
+               , expectedRound =
+                    buildSlots
+                        [ ( PegRed, PipColorMatch )
+                        , ( PegBlue, PipColorMatch )
+                        , ( PegGreen, PipColorMatch )
+                        , ( PegWhite, PipColorMatch )
+                        ]
+               }
+             , { desc = "four color matches 1"
+               , solution = buildSlots [ white, blue, black, black ]
+               , round = buildSlots [ blue, black, black, white ]
+               , expectedRound =
+                    buildSlots
+                        [ ( PegBlue, PipColorMatch )
+                        , ( PegBlack, PipColorMatch )
+                        , ( PegBlack, PipColorSlotMatch )
+                        , ( PegWhite, PipColorMatch )
+                        ]
+               }
+             , { desc = "three color matches, one color slot match"
+               , solution = buildSlots [ yellow, yellow, red, black ]
+               , round = buildSlots [ yellow, red, black, yellow ]
+               , expectedRound =
+                    buildSlots
+                        [ ( PegYellow, PipColorSlotMatch )
+                        , ( PegRed, PipColorMatch )
+                        , ( PegBlack, PipColorMatch )
+                        , ( PegYellow, PipColorMatch )
+                        ]
+               }
+             , { desc = "asf"
+               , solution = buildSlots [ green, green, green, white ]
+               , round = buildSlots [ blue, green, blue, white ]
+               , expectedRound =
+                    buildSlots
+                        [ ( PegBlue, PipNoMatch )
+                        , ( PegGreen, PipColorSlotMatch )
+                        , ( PegBlue, PipNoMatch )
+                        , ( PegWhite, PipColorSlotMatch )
+                        ]
+               }
+             ]
+                |> List.map testThing
+            )
         ]
+
+
+none =
+    ( PegNone, PipNoMatch )
+
+
+green =
+    ( PegGreen, PipNoMatch )
+
+
+yellow =
+    ( PegYellow, PipNoMatch )
+
+
+blue =
+    ( PegBlue, PipNoMatch )
+
+
+red =
+    ( PegRed, PipNoMatch )
+
+
+black =
+    ( PegBlack, PipNoMatch )
+
+
+white =
+    ( PegWhite, PipNoMatch )
+
+
+testThing foo =
+    test foo.desc <|
+        \_ ->
+            foo.round
+                |> (setRoundPips foo.solution)
+                |> Expect.equal foo.expectedRound
 
 
 buildPlayingModelForTest : Int -> Slots -> List Slots -> Model
 buildPlayingModelForTest totalSlots solution rounds =
     { currentRound = 1
-    , gameState = GamePlaying
+    , gameState = GamePlaying PegPickerClosed
     , solution = solution
     , rounds = buildRounds rounds
     , totalRounds = List.length rounds

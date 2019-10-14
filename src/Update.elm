@@ -33,6 +33,9 @@ update msg model =
             startGame model
                 |> applyGeneratedSolution
 
+        SelectSlot roundNumber slotNumber ->
+            selectSlot roundNumber slotNumber model
+
         SetPeg roundNumber slotNumber peg ->
             setPeg model roundNumber slotNumber peg
 
@@ -77,7 +80,11 @@ setTotalRounds totalRounds model =
         totalRoundsInt =
             totalRounds |> String.toInt |> withDefault 10
     in
-        ( { model | totalRounds = totalRoundsInt }, Cmd.none )
+        ( { model
+            | totalRounds = totalRoundsInt
+          }
+        , Cmd.none
+        )
 
 
 setTotalSlots : String -> Model -> ( Model, Cmd Msg )
@@ -86,7 +93,11 @@ setTotalSlots totalSlots model =
         totalSlotsInt =
             totalSlots |> String.toInt |> withDefault 4
     in
-        ( { model | totalSlots = totalSlotsInt }, Cmd.none )
+        ( { model
+            | totalSlots = totalSlotsInt
+          }
+        , Cmd.none
+        )
 
 
 applyGeneratedSolution : Model -> ( Model, Cmd Msg )
@@ -112,7 +123,9 @@ generateSolution model randomPegColors =
                 |> List.map (\randomPegNumber -> ( intToPeg randomPegNumber, PipNoMatch ))
                 |> buildSlots
     in
-        ( { model | solution = slots }
+        ( { model
+            | solution = slots
+          }
         , Cmd.none
         )
 
@@ -154,85 +167,38 @@ resetGame model =
 startGame : Model -> Model
 startGame model =
     { model
-        | gameState = GamePlaying
+        | gameState = GamePlaying PegPickerClosed
         , rounds = initRounds model.totalRounds model.totalSlots
     }
-
-
-setSlotPip : Model -> Solution -> SlotNumber -> ( Solution, Slot )
-setSlotPip model availableSolution slotNumber =
-    let
-        peg =
-            model.rounds
-                |> Dict.get model.currentRound
-                |> Maybe.withDefault Dict.empty
-                |> Dict.get slotNumber
-                |> Maybe.withDefault initSlot
-                |> Tuple.first
-
-        solutionSlot =
-            availableSolution
-                |> Dict.get slotNumber
-                |> Maybe.withDefault initSlot
-
-        isColorSlotMatch =
-            solutionSlot
-                |> \( solutionSlotPeg, _ ) -> solutionSlotPeg == peg
-
-        filteredSlotsForColor =
-            availableSolution
-                |> Dict.filter (\_ ( solutionSlotPeg, _ ) -> solutionSlotPeg == peg)
-
-        isColorMatch =
-            filteredSlotsForColor
-                |> \filteredSlots -> Dict.size filteredSlots > 0
-
-        pip =
-            if isColorSlotMatch then
-                PipColorSlotMatch
-            else if isColorMatch then
-                PipColorMatch
-            else
-                PipNoMatch
-
-        updatedAvailableSolution =
-            case pip of
-                PipNoMatch ->
-                    availableSolution
-
-                PipColorMatch ->
-                    filteredSlotsForColor
-                        |> Dict.keys
-                        |> List.head
-                        |> Maybe.withDefault -1
-                        |> (\keyToRemove -> Dict.remove keyToRemove availableSolution)
-
-                PipColorSlotMatch ->
-                    Dict.remove slotNumber availableSolution
-    in
-        ( updatedAvailableSolution, ( peg, pip ) )
 
 
 computePips : Model -> Model
 computePips model =
     let
-        ( _, updatedRound ) =
-            Dict.foldl
-                (\slotNumber v ( availableSolution, pips ) ->
-                    let
-                        ( updatedAvailableSolution, slot ) =
-                            setSlotPip model availableSolution slotNumber
-                    in
-                        ( updatedAvailableSolution, List.append pips [ slot ] )
-                )
-                ( model.solution, [] )
-                model.solution
+        currentRound =
+            model.rounds
+                |> Dict.get model.currentRound
+                |> Maybe.withDefault Dict.empty
+
+        updatedRound =
+            setRoundPips model.solution currentRound
 
         rounds =
             model.rounds
-                |> Dict.insert model.currentRound (buildSlots updatedRound)
+                |> Dict.insert model.currentRound updatedRound
     in
-        { model | rounds = rounds }
+        { model
+            | rounds = rounds
+        }
+
+
+selectSlot : RoundNumber -> SlotNumber -> Model -> ( Model, Cmd Msg )
+selectSlot roundNumber slotNumber model =
+    ( { model
+        | gameState = GamePlaying (PegPickerOpen roundNumber slotNumber)
+      }
+    , Cmd.none
+    )
 
 
 setPeg : Model -> RoundNumber -> SlotNumber -> Peg -> ( Model, Cmd Msg )
@@ -241,12 +207,83 @@ setPeg model roundIndex slotIndex peg =
         ( model, Cmd.none )
     else
         let
+            setUnmatchedPeg _ =
+                ( peg, PipNoMatch )
+
             updateRoundSlots slots =
                 slots
-                    |> Dict.update slotIndex (Maybe.map <| \_ -> ( peg, PipNoMatch ))
+                    |> Dict.update slotIndex (Maybe.map setUnmatchedPeg)
 
             rounds =
                 model.rounds
                     |> Dict.update roundIndex (Maybe.map updateRoundSlots)
         in
-            ( { model | rounds = rounds }, Cmd.none )
+            ( { model
+                | rounds = rounds
+                , gameState = GamePlaying PegPickerClosed
+              }
+            , Cmd.none
+            )
+
+
+pegAtSlot : SlotNumber -> Slots -> Peg
+pegAtSlot slotNumber slots =
+    slots
+        |> Dict.get slotNumber
+        |> Maybe.withDefault initSlot
+        |> Tuple.first
+
+
+pipAtSlot : SlotNumber -> Slots -> Pip
+pipAtSlot slotNumber slots =
+    slots
+        |> Dict.get slotNumber
+        |> Maybe.withDefault initSlot
+        |> Tuple.second
+
+
+setRoundPips : Solution -> Slots -> Slots
+setRoundPips incomingSolution incomingRound =
+    let
+        colorSlotMatchReducer roundSlotNumber ( peg, pip ) ( solutionLookup, roundLookup, round ) =
+            if pegAtSlot roundSlotNumber solutionLookup == peg then
+                ( solutionLookup |> Dict.remove roundSlotNumber
+                , roundLookup |> Dict.remove roundSlotNumber
+                , round |> Dict.insert roundSlotNumber ( peg, PipColorSlotMatch )
+                )
+            else
+                ( solutionLookup, roundLookup, round )
+
+        colorMatchMapper roundSlotNumber ( peg, _ ) ( solutionLookup, roundLookup, round ) =
+            let
+                isPegAlreadyMatched =
+                    pipAtSlot roundSlotNumber round /= PipNoMatch
+
+                colorMatches =
+                    if not isPegAlreadyMatched then
+                        solutionLookup
+                            |> Dict.filter
+                                (\solutionSlotNumber ( solutionPeg, _ ) ->
+                                    peg == solutionPeg && roundSlotNumber /= solutionSlotNumber
+                                )
+                    else
+                        Dict.empty
+            in
+                if Dict.size colorMatches > 0 then
+                    ( (Dict.foldl
+                        (\matchedSlotNumber _ remainingSolutions -> Dict.remove matchedSlotNumber remainingSolutions)
+                        solutionLookup
+                        colorMatches
+                      )
+                    , roundLookup |> Dict.remove roundSlotNumber
+                    , round |> Dict.insert roundSlotNumber ( peg, PipColorMatch )
+                    )
+                else
+                    ( solutionLookup, roundLookup, round )
+
+        ( s, r, resultRound ) =
+            incomingRound
+                |> Dict.foldl colorSlotMatchReducer ( incomingSolution, incomingRound, incomingRound )
+                |> (\previousAcc -> Dict.foldl colorMatchMapper previousAcc incomingRound)
+    in
+        resultRound
