@@ -26,6 +26,11 @@ body {
   transform: rotate(.75turn);
 }
 
+.game-state-title {
+  margin: 0 0 10px 0;
+  text-align: right;
+}
+
 .peg {
   background: clear;
   border-radius: 50%;

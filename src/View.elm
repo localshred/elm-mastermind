@@ -1,7 +1,7 @@
 module View exposing (..)
 
 import Dict exposing (toList)
-import Html exposing (Html, button, div, h2, h3, input, label, text, span)
+import Html exposing (Html, button, div, h2, h5, input, label, text, span)
 import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (classList, disabled, id, type_, value)
 import Types exposing (..)
@@ -286,8 +286,8 @@ roundsView model =
 
 gameEnd : String -> String -> Html Msg
 gameEnd class txt =
-    div [ classList [ ( "game-state-end", True ), ( class, True ) ] ]
-        [ h3 [] [ text txt ]
+    div [ classList [ ( "game-state-title", True ), ( "game-state-end", True ), ( class, True ) ] ]
+        [ h5 [] [ text txt ]
         , btn "New Game" "grey" ResetGame []
         ]
 
@@ -296,10 +296,10 @@ displayGameStateTitle : Model -> Html Msg
 displayGameStateTitle model =
     case model.gameState of
         GameNew ->
-            h3 [] [ text "Game hasn't started yet" ]
+            h5 [ classList [ ( "game-state-title", True ) ] ] [ text "Game hasn't started yet" ]
 
         GamePlaying _ ->
-            h3 [] [ text <| guessesCountDescription model ]
+            h5 [ classList [ ( "game-state-title", True ) ] ] [ text <| guessesCountDescription model ]
 
         GameWon ->
             gameEnd "game-state-won" <| "You won the game in " ++ String.fromInt model.currentRound ++ " Rounds!"
