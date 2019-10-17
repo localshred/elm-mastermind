@@ -1,0 +1,14 @@
+{
+  "name": "mastermind",
+  "version": "1.0.0",
+  "description": "Mastermind game",
+  "main": "index.js",
+  "repository": "https://github.com/localshred/mastermind",
+  "author": "BJ Neilsen <bj.neilsen@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "elm": "^0.19.0-no-deps",
+    "elm-live": "^4.0.0-rc.1",
+    "elm-test": "^0.19.0-rev6"
+  }
+}
