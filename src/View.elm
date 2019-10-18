@@ -7,6 +7,12 @@ import Html.Attributes exposing (classList, disabled, id, type_, value)
 import Types exposing (..)
 
 
+classes : List String -> Html.Attribute Msg
+classes enabledClasses =
+    classList
+        (enabledClasses |> List.map (\class -> ( class, True )))
+
+
 view : Model -> Html Msg
 view model =
     let
@@ -17,9 +23,27 @@ view model =
 
                 _ ->
                     viewGamePlaying model
+
+        gameStateClasses =
+            case model.gameState of
+                GameNew ->
+                    [ "game-state-new" ]
+
+                GamePlaying _ ->
+                    [ "game-state-playing" ]
+
+                GameWon ->
+                    [ "game-state-end", "game-state-won" ]
+
+                GameLost ->
+                    [ "game-state-end", "game-state-lost" ]
     in
-        div [ id "main" ] <|
-            [ h2 [ id "game-title" ] [ text "Mastermind" ] ]
+        div
+            [ id "main"
+            , classes gameStateClasses
+            ]
+        <|
+            [ h2 [ id "game-title" ] [ text "MASTERMIND" ] ]
                 ++ [ innerGameView ]
 
 
@@ -50,11 +74,11 @@ viewGameNew model =
             not <| model.totalRounds > 0 && model.totalSlots > 0
     in
         div
-            [ classList [ ( "new-game", True ) ] ]
+            [ classList [ ( "game-board", True ) ] ]
             [ inputFieldRow <| [ textInput "# Rounds" (String.fromInt model.totalRounds) ConfigSetTotalRounds ]
             , inputFieldRow <| [ textInput "# Pegs" (String.fromInt model.totalSlots) ConfigSetTotalSlots ]
             , inputFieldRow <|
-                [ btn "Crack the Code!" "grey" StartGame [ disabled isStartGameEnabled ] ]
+                [ btn "Crack the Code!" "filled" StartGame [ disabled isStartGameEnabled ] ]
             ]
 
 
@@ -69,19 +93,21 @@ viewGamePlaying model =
         solution =
             model |> solutionView |> maybeToListItem
     in
-        div [] <|
-            [ displayGameStateTitle model ]
+        div [ classList [ ( "game-board", True ) ] ] <|
+            [ displayGameStateTitle model
+            , roundsView model
+            ]
                 ++ solution
-                ++ [ roundsView model ]
 
 
-pegView : String -> List (Html.Attribute Msg) -> Html Msg
-pegView pegClassName additionalAttrs =
+pegView : Bool -> String -> List (Html.Attribute Msg) -> Html Msg
+pegView isSelected className additionalAttrs =
     div
         ([ classList
             [ ( "peg", True )
-            , ( pegClassName, True )
-            , ( "pegged", pegClassName /= "clear" )
+            , ( "pegged", className /= "clear" )
+            , ( "selected", isSelected )
+            , ( className, True )
             ]
          ]
             ++ additionalAttrs
@@ -92,27 +118,30 @@ pegView pegClassName additionalAttrs =
 slotView : RoundNumber -> Model -> ( SlotNumber, Slot ) -> Html Msg
 slotView roundNumber model ( slotNumber, ( peg, pip ) ) =
     let
-        pegClassName =
+        className =
             pegClassColor peg
 
-        currentRoundSlotAttrs =
-            [ classList [ ( "current-round", True ) ]
-            , onClick (SelectSlot roundNumber slotNumber)
-            ]
+        isSelected =
+            case model.gameState of
+                GamePlaying (PegPickerOpen selectedRoundNumber selectedSlotNumber) ->
+                    selectedRoundNumber == roundNumber && selectedSlotNumber == slotNumber
 
-        isCurrentRound =
-            model.currentRound == roundNumber
+                _ ->
+                    False
+
+        additionalAttrs =
+            if model.currentRound == roundNumber then
+                [ onClick (SelectSlot roundNumber slotNumber) ]
+            else
+                []
     in
-        if isCurrentRound then
-            pegView pegClassName currentRoundSlotAttrs
-        else
-            pegView pegClassName []
+        pegView isSelected className additionalAttrs
 
 
 roundView : Model -> ( RoundNumber, Slots ) -> Html Msg
 roundView model ( roundNumber, slots ) =
     div
-        [ classList [ ( "round", True ) ] ]
+        [ classList [ ( "round", True ), ( "current-round", model.currentRound == roundNumber ) ] ]
         [ roundNameView roundNumber
         , slotsView roundNumber slots model
         , roundInfoView roundNumber model
@@ -133,7 +162,7 @@ slotsView : RoundNumber -> Slots -> Model -> Html Msg
 slotsView roundNumber slots model =
     div
         [ classList
-            [ ( "slots", True )
+            [ ( "round-slots", True )
             , ( "picker-open", isPickerOpen model )
             ]
         ]
@@ -165,7 +194,10 @@ pegPickerSlotsView : RoundNumber -> SlotNumber -> Html Msg
 pegPickerSlotsView roundNumber slotNumber =
     let
         pegSlotView peg =
-            pegView (pegClassColor peg) [ onClick <| SetPeg roundNumber slotNumber peg ]
+            pegView
+                False
+                (pegClassColor peg)
+                [ onClick <| SetPeg roundNumber slotNumber peg ]
     in
         div
             [ classList [ ( "peg-picker", True ) ] ]
@@ -175,7 +207,7 @@ pegPickerSlotsView roundNumber slotNumber =
 btn : String -> String -> Msg -> List (Html.Attribute Msg) -> Html Msg
 btn txt color msg attrs =
     button
-        ([ classList [ ( "btn-" ++ color, True ) ]
+        ([ classList [ ( "btn", True ), ( "btn-" ++ color, True ) ]
          , onClick msg
          ]
             ++ attrs
@@ -192,7 +224,7 @@ roundInfoView roundNumber model =
                 GamePlaying _ ->
                     if areRoundSlotsFull roundNumber model then
                         Just <|
-                            btn "COMPUTE" "grey" CommitRound []
+                            btn "CHECK" "filled" CommitRound []
                     else
                         Nothing
 
@@ -206,7 +238,7 @@ roundInfoView roundNumber model =
             else if roundNumber < model.currentRound then
                 model |> pipsForRoundView roundNumber
             else
-                []
+                [ div [] [ text "&nbsp;" ] ]
     in
         div
             [ classList [ ( "round-info", True ) ] ]
@@ -255,7 +287,7 @@ roundNameView roundNumber =
                     String.fromInt roundNumber
     in
         div
-            [ classList [ ( "round-name", True ) ] ]
+            [ classList [ ( "round-number", True ) ] ]
             [ text roundName ]
 
 
@@ -284,28 +316,41 @@ roundsView model =
         )
 
 
-gameEnd : String -> String -> Html Msg
-gameEnd class txt =
-    div [ classList [ ( "game-state-title", True ), ( "game-state-end", True ), ( class, True ) ] ]
-        [ h5 [] [ text txt ]
-        , btn "New Game" "grey" ResetGame []
-        ]
+title : List String -> String -> List (Html Msg) -> Html Msg
+title classNames txt otherChildren =
+    div [ classes ([ "game-state-title" ] ++ classNames) ]
+        ([ h5 [] [ text txt ] ] ++ otherChildren)
 
 
 displayGameStateTitle : Model -> Html Msg
 displayGameStateTitle model =
     case model.gameState of
         GameNew ->
-            h5 [ classList [ ( "game-state-title", True ) ] ] [ text "Game hasn't started yet" ]
+            title
+                [ "game-state-new" ]
+                "Game hasn't started yet"
+                []
 
         GamePlaying _ ->
-            h5 [ classList [ ( "game-state-title", True ) ] ] [ text <| guessesCountDescription model ]
+            title
+                [ "game-state-playing" ]
+                (guessesCountDescription model)
+                []
 
         GameWon ->
-            gameEnd "game-state-won" <| "You won the game in " ++ String.fromInt model.currentRound ++ " Rounds!"
+            title
+                [ "game-state-end", "game-state-won" ]
+                ("You won the game in "
+                    ++ String.fromInt model.currentRound
+                    ++ " Rounds!"
+                )
+                [ btn "New Game" "filled" ResetGame [] ]
 
         GameLost ->
-            gameEnd "game-state-lost" "Sorry, you lost the game!"
+            title
+                [ "game-state-end", "game-state-lost" ]
+                "Sorry, you lost the game!"
+                [ btn "New Game" "filled" ResetGame [] ]
 
 
 guessesCountDescription : Model -> String
