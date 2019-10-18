@@ -170,14 +170,42 @@ startGame model =
 
 onKeyPress : String -> Model -> ( Model, Cmd Msg )
 onKeyPress key model =
-    case key of
-        "Escape" ->
-            case model.gameState of
-                GamePlaying (PegPickerOpen _ _) ->
+    case model.gameState of
+        GamePlaying (PegPickerOpen _ _) ->
+            case key of
+                "Escape" ->
                     closePegPicker model
+
+                "b" ->
+                    setPegForKeyPress PegBlack model
+
+                "g" ->
+                    setPegForKeyPress PegGreen model
+
+                "r" ->
+                    setPegForKeyPress PegRed model
+
+                "u" ->
+                    setPegForKeyPress PegBlue model
+
+                "w" ->
+                    setPegForKeyPress PegWhite model
+
+                "y" ->
+                    setPegForKeyPress PegYellow model
 
                 _ ->
                     ( model, Cmd.none )
+
+        _ ->
+            ( model, Cmd.none )
+
+
+setPegForKeyPress : Peg -> Model -> ( Model, Cmd Msg )
+setPegForKeyPress peg model =
+    case model.gameState of
+        GamePlaying (PegPickerOpen roundIndex slotIndex) ->
+            setPeg model roundIndex slotIndex peg
 
         _ ->
             ( model, Cmd.none )

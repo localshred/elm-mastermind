@@ -3,14 +3,11 @@
 body {
   width: 100vw;
   height: 100vh;
-  /* background: #1f2421; */
   background: #e2d4ba;
-  /* color: #dce1de; */
-  /* color: #1f2421; */
   color: #4d4861;
   margin: 0;
   padding: 0;
-  font-family: "Big Shoulders Text", cursive; /*"Lucida Sans Typewriter", "Lucida Console", monaco, "Bitstream Vera Sans Mono", monospace;*/
+  font-family: 'Big Shoulders Text', cursive;
   font-size: 26px;
 }
 
@@ -21,25 +18,26 @@ body {
 }
 
 #game-title {
-  color: #4D4861;
+  color: #4d4861;
   position: absolute;
+  text-shadow: 2px 3px #af7a6d;
   transform: translateX(0) translateY(-100px) rotate(0);
   transition-duration: 0.5s;
   transition-property: transform;
   transition-timing-function: ease-in-out;
-  text-shadow: 2px 3px #af7a6d;
   z-index: 1;
 }
 
 .game-state-playing #game-title {
-  transform: translateX(-108px) translateY(41px) rotate(-.25turn);
+  text-shadow: -2px 3px #af7a6d;
+  transform: translateX(-108px) translateY(37px) rotate(-0.25turn);
   transition-duration: 0.5s;
-  transition-property: transform;
+  transition-property: transform, text-shadow;
   transition-timing-function: ease-in-out;
 }
 
 .game-state-title {
-  color: #4D4861;
+  color: #4d4861;
   margin: 0;
   text-align: right;
   text-shadow: 2px 2px #af7a6d;
@@ -70,9 +68,8 @@ body {
   border-color: #1f2421;
 }
 
-.peg.pegged
-, .peg.selected
-{
+.peg.pegged,
+.peg.selected {
   border-style: solid;
   border-color: #1f2421;
 }
@@ -137,7 +134,6 @@ body {
   opacity: 0;
   animation: 0.5s 1 fadein;
   animation-fill-mode: forwards;
-  /* background: #9e7682; */
 }
 
 .solution .round-slots {
@@ -165,7 +161,6 @@ body {
 }
 
 .peg-picker {
-  /* background: #eaf9d9; */
   color: #1f2421;
   left: 18px;
   position: absolute;
@@ -181,18 +176,16 @@ body {
 .picker-title {
   margin: 0;
   padding: 0;
-
 }
 
 .peg-picker .peg {
-  opacity: .7;
+  opacity: 0.7;
 }
 
 .peg-picker .peg:hover {
   cursor: pointer;
   opacity: 1;
 }
-
 
 .pips {
   width: 48px;
@@ -245,7 +238,7 @@ body {
 }
 
 .btn {
-  border: 1px solid #1B3022;
+  border: 1px solid #1b3022;
   border-radius: 6px;
   cursor: pointer;
   display: inline-block;
@@ -262,15 +255,14 @@ body {
 .btn.btn-filled {
   background-color: #4d4861;
   color: #e2d4ba;
-;
 }
 
 .btn.btn-filled:hover {
-  background: linear-gradient(to bottom, #7261A3, #4d4861);
+  background: linear-gradient(to bottom, #7261a3, #4d4861);
 }
 
 .btn.btn-filled:active {
-  background: linear-gradient(to bottom, #4d4861, #7261A3);
+  background: linear-gradient(to bottom, #4d4861, #7261a3);
 }
 
 .btn.btn-outlined {
