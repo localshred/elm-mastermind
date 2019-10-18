@@ -165,7 +165,7 @@ body {
 }
 
 .peg-picker {
-  background: #eaf9d9;
+  /* background: #eaf9d9; */
   color: #1f2421;
   left: 18px;
   position: absolute;
@@ -173,7 +173,8 @@ body {
   width: 150px;
   z-index: 150;
   border-radius: 8px;
-  border: 1px solid #1f2421;
+  border: 1px solid #af7a6d;
+  box-shadow: 3px 3px #af7a6d;
   padding: 5px;
 }
 
@@ -184,7 +185,7 @@ body {
 }
 
 .peg-picker .peg {
-  opacity: .5;
+  opacity: .7;
 }
 
 .peg-picker .peg:hover {
@@ -225,6 +226,10 @@ body {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+}
+
+.game-state-end .game-state-title h5 {
+  padding-top: 4px;
 }
 
 .game-board {
