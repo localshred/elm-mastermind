@@ -2,6 +2,7 @@ module Update exposing (..)
 
 import Dict
 import Random
+import Random.List exposing (shuffle)
 import Maybe exposing (withDefault)
 import Tuple
 import Types exposing (..)
@@ -10,28 +11,31 @@ import Types exposing (..)
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ApplyGenerators randomizers ->
+            model
+                |> applyGenerators randomizers
+
         CommitRound ->
             model
                 |> computePips
                 |> computeNextGameState
 
-        ConfigSetTotalRounds totalRounds ->
+        ConfigSet ConfigKeyTotalRounds totalRounds ->
             model
                 |> setTotalRounds totalRounds
 
-        ConfigSetTotalSlots totalSlots ->
+        ConfigSet ConfigKeyTotalSlots totalSlots ->
             model
                 |> setTotalSlots totalSlots
 
-        GenerateSolution randomPegInts ->
-            generateSolution model randomPegInts
-
         ResetGame ->
-            resetGame model
+            model
+                |> resetGame
 
         StartGame ->
-            startGame model
-                |> applyGeneratedSolution
+            model
+                |> startGame
+                |> dispatchApplyGeneratorsMsg
 
         SelectSlot roundNumber slotNumber ->
             selectSlot roundNumber slotNumber model
@@ -100,59 +104,44 @@ setTotalSlots totalSlots model =
         )
 
 
-applyGeneratedSolution : Model -> ( Model, Cmd Msg )
-applyGeneratedSolution model =
+dispatchApplyGeneratorsMsg : Model -> ( Model, Cmd Msg )
+dispatchApplyGeneratorsMsg model =
     if model.totalRounds > 0 && model.totalSlots > 0 then
-        ( model, generateRandomSolution model.totalSlots )
+        ( model
+        , Random.generate ApplyGenerators <|
+            Random.pair
+                (generateRandomSolution model.totalSlots)
+                (generatePipRandomizer model.totalSlots)
+        )
     else
         ( model, Cmd.none )
 
 
-generateRandomSolution : SlotNumber -> Cmd Msg
+generatePipRandomizer : Int -> Random.Generator (List Int)
+generatePipRandomizer totalSlots =
+    (totalSlots - 1)
+        |> List.range 0
+        |> shuffle
+
+
+generateRandomSolution : SlotNumber -> Random.Generator (List Int)
 generateRandomSolution totalSlots =
-    Random.int 1 totalPegColors
+    totalPegColors
+        |> Random.int 1
         |> Random.list totalSlots
-        |> Random.generate GenerateSolution
 
 
-generateSolution : Model -> List Int -> ( Model, Cmd Msg )
-generateSolution model randomPegColors =
-    let
-        slots =
-            randomPegColors
-                |> List.map (\randomPegNumber -> ( intToPeg randomPegNumber, PipNoMatch ))
+applyGenerators : ( List Int, List Int ) -> Model -> ( Model, Cmd Msg )
+applyGenerators ( randomizedSolution, randomizedPipIndexes ) model =
+    ( { model
+        | randomPipIndexes = randomizedPipIndexes
+        , solution =
+            randomizedSolution
+                |> List.map buildSlot
                 |> buildSlots
-    in
-        ( { model
-            | solution = slots
-          }
-        , Cmd.none
-        )
-
-
-intToPeg : Int -> Peg
-intToPeg randomPegNumber =
-    case randomPegNumber of
-        1 ->
-            PegBlack
-
-        2 ->
-            PegBlue
-
-        3 ->
-            PegGreen
-
-        4 ->
-            PegRed
-
-        5 ->
-            PegWhite
-
-        6 ->
-            PegYellow
-
-        _ ->
-            PegNone
+      }
+    , Cmd.none
+    )
 
 
 resetGame : Model -> ( Model, Cmd Msg )

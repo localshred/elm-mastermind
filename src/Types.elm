@@ -14,6 +14,7 @@ type GameState
 type alias Model =
     { currentRound : RoundNumber
     , gameState : GameState
+    , randomPipIndexes : List Int
     , rounds : Rounds
     , solution : Solution
     , totalRounds : RoundNumber
@@ -21,11 +22,15 @@ type alias Model =
     }
 
 
+type ConfigKey
+    = ConfigKeyTotalSlots
+    | ConfigKeyTotalRounds
+
+
 type Msg
     = CommitRound
-    | ConfigSetTotalRounds String
-    | ConfigSetTotalSlots String
-    | GenerateSolution (List Int)
+    | ConfigSet ConfigKey String
+    | ApplyGenerators ( List Int, List Int )
     | ResetGame
     | StartGame
     | SelectSlot RoundNumber SlotNumber
@@ -95,6 +100,7 @@ init : () -> ( Model, Cmd Msg )
 init flags =
     ( { currentRound = 1
       , gameState = GameNew
+      , randomPipIndexes = []
       , rounds = Dict.empty
       , solution = Dict.empty
       , totalRounds = 10
@@ -113,7 +119,32 @@ initRounds totalRounds totalSlots =
 
 initSlot : Slot
 initSlot =
-    ( PegNone, PipNoMatch )
+    buildSlot 0
+
+
+buildSlot : Int -> Slot
+buildSlot pegInt =
+    case pegInt of
+        1 ->
+            ( PegBlack, PipNoMatch )
+
+        2 ->
+            ( PegBlue, PipNoMatch )
+
+        3 ->
+            ( PegGreen, PipNoMatch )
+
+        4 ->
+            ( PegRed, PipNoMatch )
+
+        5 ->
+            ( PegWhite, PipNoMatch )
+
+        6 ->
+            ( PegYellow, PipNoMatch )
+
+        _ ->
+            ( PegNone, PipNoMatch )
 
 
 initRound : RoundNumber -> SlotNumber -> Slots

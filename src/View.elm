@@ -1,6 +1,6 @@
 module View exposing (..)
 
-import Dict exposing (toList)
+import Dict
 import Html exposing (Html, button, div, h2, h5, input, label, text, span)
 import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (classList, disabled, id, type_, value)
@@ -75,10 +75,25 @@ viewGameNew model =
     in
         div
             [ classList [ ( "game-board", True ) ] ]
-            [ inputFieldRow <| [ textInput "# Rounds" (String.fromInt model.totalRounds) ConfigSetTotalRounds ]
-            , inputFieldRow <| [ textInput "# Pegs" (String.fromInt model.totalSlots) ConfigSetTotalSlots ]
+            [ inputFieldRow <|
+                [ textInput
+                    "# Rounds"
+                    (String.fromInt model.totalRounds)
+                    (ConfigSet ConfigKeyTotalRounds)
+                ]
             , inputFieldRow <|
-                [ btn "Crack the Code!" "filled" StartGame [ disabled isStartGameEnabled ] ]
+                [ textInput
+                    "# Pegs"
+                    (String.fromInt model.totalSlots)
+                    (ConfigSet ConfigKeyTotalSlots)
+                ]
+            , inputFieldRow <|
+                [ btn
+                    "Crack the Code!"
+                    "filled"
+                    StartGame
+                    [ disabled isStartGameEnabled ]
+                ]
             ]
 
 
@@ -231,35 +246,41 @@ roundInfoView roundNumber model =
                 _ ->
                     Nothing
 
-        children : List (Html Msg)
-        children =
+        infoCell : List (Html Msg)
+        infoCell =
             if roundNumber == model.currentRound then
                 buttonChild |> maybeToListItem
-            else if roundNumber < model.currentRound then
-                model |> pipsForRoundView roundNumber
+            else if roundNumber > 0 then
+                [ model |> pipsForRoundView roundNumber ]
             else
-                [ div [] [ text "&nbsp;" ] ]
+                []
     in
         div
             [ classList [ ( "round-info", True ) ] ]
-            children
+            infoCell
 
 
-pipsForRoundView : RoundNumber -> Model -> List (Html Msg)
+pipsForRoundView : RoundNumber -> Model -> Html Msg
 pipsForRoundView roundNumber model =
-    let
-        slots =
-            model.rounds
-                |> Dict.get roundNumber
-                |> Maybe.withDefault Dict.empty
+    div [ classList [ ( "pips", True ) ] ]
+        (model.rounds
+            |> Dict.get roundNumber
+            |> Maybe.withDefault Dict.empty
+            |> Dict.map (\_ slot -> Tuple.second slot)
+            |> randomizePips model.randomPipIndexes
+            |> List.map pipView
+        )
 
-        pips =
-            slots
-                |> Dict.map (\k slot -> Tuple.second slot)
-                |> Dict.values
-                |> List.map pipView
-    in
-        [ div [ classList [ ( "pips", True ) ] ] pips ]
+
+randomizePips : List Int -> Dict.Dict SlotNumber Pip -> List Pip
+randomizePips randomPipIndexes pips =
+    randomPipIndexes
+        |> List.map
+            (\index ->
+                pips
+                    |> Dict.get index
+                    |> Maybe.withDefault PipNoMatch
+            )
 
 
 pipView : Pip -> Html Msg
