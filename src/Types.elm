@@ -28,9 +28,10 @@ type ConfigKey
 
 
 type Msg
-    = CommitRound
+    = ApplyGenerators ( List Int, List Int )
+    | CommitRound
     | ConfigSet ConfigKey String
-    | ApplyGenerators ( List Int, List Int )
+    | KeyPress String
     | ResetGame
     | StartGame
     | SelectSlot RoundNumber SlotNumber

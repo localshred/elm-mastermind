@@ -28,6 +28,10 @@ update msg model =
             model
                 |> setTotalSlots totalSlots
 
+        KeyPress key ->
+            model
+                |> onKeyPress key
+
         ResetGame ->
             model
                 |> resetGame
@@ -162,6 +166,30 @@ startGame model =
         | gameState = GamePlaying PegPickerClosed
         , rounds = initRounds model.totalRounds model.totalSlots
     }
+
+
+onKeyPress : String -> Model -> ( Model, Cmd Msg )
+onKeyPress key model =
+    case key of
+        "Escape" ->
+            case model.gameState of
+                GamePlaying (PegPickerOpen _ _) ->
+                    closePegPicker model
+
+                _ ->
+                    ( model, Cmd.none )
+
+        _ ->
+            ( model, Cmd.none )
+
+
+closePegPicker : Model -> ( Model, Cmd Msg )
+closePegPicker model =
+    ( { model
+        | gameState = GamePlaying PegPickerClosed
+      }
+    , Cmd.none
+    )
 
 
 computePips : Model -> Model

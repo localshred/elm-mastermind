@@ -1,6 +1,8 @@
 module Main exposing (..)
 
 import Browser
+import Browser.Events exposing (onKeyDown)
+import Json.Decode as Decode
 import Types exposing (..)
 import Update exposing (update)
 import View exposing (view)
@@ -18,4 +20,9 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    onKeyDown keyDownDecoder
+
+
+keyDownDecoder : Decode.Decoder Msg
+keyDownDecoder =
+    Decode.map KeyPress (Decode.field "key" Decode.string)
