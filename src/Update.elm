@@ -172,8 +172,8 @@ onKeyPress : String -> Model -> ( Model, Cmd Msg )
 onKeyPress key model =
     case model.gameState of
         GamePlaying (PegPickerOpen _ _) ->
-            case key of
-                "Escape" ->
+            case String.toLower key of
+                "escape" ->
                     closePegPicker model
 
                 "b" ->

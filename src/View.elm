@@ -115,8 +115,8 @@ viewGamePlaying model =
                 ++ solution
 
 
-pegView : Bool -> String -> List (Html.Attribute Msg) -> Html Msg
-pegView isSelected className additionalAttrs =
+pegView : Peg -> Bool -> Bool -> String -> List (Html.Attribute Msg) -> Html Msg
+pegView peg isPickerView isSelected className additionalAttrs =
     div
         ([ classList
             [ ( "peg", True )
@@ -127,7 +127,36 @@ pegView isSelected className additionalAttrs =
          ]
             ++ additionalAttrs
         )
-        []
+        (if isPickerView then
+            [ text <| pegToKeyCode peg ]
+         else
+            []
+        )
+
+
+pegToKeyCode : Peg -> String
+pegToKeyCode peg =
+    case peg of
+        PegBlack ->
+            "b"
+
+        PegBlue ->
+            "u"
+
+        PegGreen ->
+            "g"
+
+        PegRed ->
+            "r"
+
+        PegWhite ->
+            "w"
+
+        PegYellow ->
+            "y"
+
+        _ ->
+            ""
 
 
 slotView : RoundNumber -> Model -> ( SlotNumber, Slot ) -> Html Msg
@@ -150,7 +179,7 @@ slotView roundNumber model ( slotNumber, ( peg, pip ) ) =
             else
                 []
     in
-        pegView isSelected className additionalAttrs
+        pegView peg False isSelected className additionalAttrs
 
 
 roundView : Model -> ( RoundNumber, Slots ) -> Html Msg
@@ -210,6 +239,8 @@ pegPickerSlotsView roundNumber slotNumber =
     let
         pegSlotView peg =
             pegView
+                peg
+                True
                 False
                 (pegClassColor peg)
                 [ onClick <| SetPeg roundNumber slotNumber peg ]
