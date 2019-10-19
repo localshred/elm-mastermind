@@ -1,5 +1,5 @@
 build:
-	./node_modules/.bin/elm build src/Main.elm --output=assets/elm.js \
+	./node_modules/.bin/elm make src/Main.elm --output=assets/elm.js \
 		&& cp -R assets dist
 
 clean:
