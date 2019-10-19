@@ -1,6 +1,6 @@
 [build]
   publish = "dist"
-  command = "make build"
+  command = "make clean build"
 
 [[redirects]]
   from = "/*"
