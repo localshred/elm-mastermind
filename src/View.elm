@@ -1,9 +1,9 @@
 module View exposing (..)
 
 import Dict
-import Html exposing (Html, button, div, h2, h5, input, label, text, span)
+import Html exposing (Html, a, button, div, h2, h5, input, label, text, span)
 import Html.Events exposing (onClick, onInput)
-import Html.Attributes exposing (classList, disabled, id, type_, value)
+import Html.Attributes exposing (classList, disabled, href, id, type_, value)
 import Types exposing (..)
 
 
@@ -45,6 +45,7 @@ view model =
         <|
             [ h2 [ id "game-title" ] [ text "MASTERMIND" ] ]
                 ++ [ innerGameView ]
+                ++ [ credits ]
 
 
 textInput : String -> String -> (String -> Msg) -> Html Msg
@@ -440,3 +441,11 @@ pegClassColor peg =
 
         PegNone ->
             "clear"
+
+
+credits : Html Msg
+credits =
+    div [ id "credits" ]
+        [ text "Made with love by "
+        , a [ href "https://twitter.com/localshred" ] [ text "@localshred" ]
+        ]

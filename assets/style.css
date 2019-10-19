@@ -28,6 +28,12 @@ body {
   z-index: 1;
 }
 
+#credits {
+  position: absolute;
+  font-size: 16px;
+  bottom: 20px;
+}
+
 .game-state-playing #game-title {
   text-shadow: -2px 3px #af7a6d;
   transform: translateX(-108px) translateY(37px) rotate(-0.25turn);
@@ -119,7 +125,6 @@ body {
   border-bottom: 1px solid #af7a6d;
   display: flex;
   flex-direction: row;
-  height: 40px;
   justify-content: stretch;
   width: 100%;
 }
@@ -158,16 +163,17 @@ body {
 }
 
 .peg-picker {
+  background: #e2d4ba;
+  border-radius: 8px;
+  border: 1px solid #af7a6d;
+  box-shadow: 3px 3px #af7a6d;
   color: #1f2421;
   left: 18px;
+  padding: 5px;
   position: absolute;
   top: 40px;
   width: 150px;
   z-index: 150;
-  border-radius: 8px;
-  border: 1px solid #af7a6d;
-  box-shadow: 3px 3px #af7a6d;
-  padding: 5px;
 }
 
 .picker-title {

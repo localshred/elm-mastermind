@@ -6,6 +6,9 @@ build:
 clean:
 	rm -rf dist/ && rm -rf assets/elm.js
 
+open:
+	open dist/index.html
+
 server:
 	./node_modules/.bin/elm-live src/Main.elm -o -v -H -s index.html -d assets -- --output=assets/elm.js
 
