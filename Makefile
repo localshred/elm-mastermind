@@ -1,6 +1,7 @@
 build:
 	./node_modules/.bin/elm make src/Main.elm --output=assets/elm.js \
-		&& cp -R assets dist
+		&& mkdir -p dist \
+		&& cp -R assets/* dist/*
 
 clean:
 	rm -rf dist/ && rm -rf assets/elm.js

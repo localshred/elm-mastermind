@@ -115,11 +115,12 @@ body {
 }
 
 .round {
+  align-items: stretch;
   border-bottom: 1px solid #af7a6d;
   display: flex;
   flex-direction: row;
+  height: 40px;
   justify-content: stretch;
-  align-items: stretch;
   width: 100%;
 }
 
@@ -130,34 +131,25 @@ body {
   padding-top: 3px;
   background: #af7a6d;
   color: #e2d4ba;
+  border-bottom: 1px solid #e2d4ba;
 }
 
 .round-slots {
   position: relative;
   flex: 10;
   width: auto;
-  opacity: 0;
-  animation: 0.5s 1 fadein;
-  animation-fill-mode: forwards;
 }
 
 .solution .round-slots {
   background: #af7a6d;
 }
 
-@keyframes fadein {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 .round-info {
   text-align: center;
   width: 100px;
   background: #af7a6d;
+  font-size: 12px;
+  border-bottom: 1px solid #e2d4ba;
 }
 
 .solution {
@@ -195,7 +187,7 @@ body {
 .pips {
   width: 48px;
   margin: 0 auto;
-  padding-top: 2px;
+  padding-top: 3px;
 }
 
 .pip {
@@ -203,7 +195,7 @@ body {
   border: 1px solid #333;
   display: inline-block;
   height: 10px;
-  margin: 3px;
+  margin: 1px 3px;
   overflow: hidden;
   width: 10px;
 }
